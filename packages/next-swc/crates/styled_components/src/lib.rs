@@ -7,10 +7,11 @@ pub use crate::{
     },
 };
 use serde::Deserialize;
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, collections::hash_map::DefaultHasher};
 use swc_atoms::JsWord;
 use swc_common::{chain, pass::Optional, FileName};
 use swc_ecmascript::visit::{Fold, VisitMut};
+use std::hash::{Hash, Hasher};
 
 mod css;
 mod utils;
@@ -72,11 +73,13 @@ impl Config {
 /// Only [analyzer] and [display_name_and_id] is implemented.
 pub fn styled_components(
     file_name: FileName,
+    file_unmapped_path: Option<FileName>,
     src_file_hash: u128,
     config: Config,
 ) -> impl Fold + VisitMut {
     let state: Rc<RefCell<State>> = Default::default();
     let config = Rc::new(config);
+    let display_hash = calc_display_hash(file_unmapped_path, src_file_hash);
 
     chain!(
         analyzer(config.clone(), state.clone()),
@@ -84,6 +87,22 @@ pub fn styled_components(
             enabled: config.css_prop,
             visitor: transpile_css_prop(state.clone())
         },
-        display_name_and_id(file_name, src_file_hash, config.clone(), state)
+        display_name_and_id(file_name, display_hash, config.clone(), state)
     )
+}
+
+/// Generate the display_hash from the file path if available
+/// Otherwise fallback to the file contents hash
+pub fn calc_display_hash(
+    file_unmapped_path: Option<FileName>,
+    src_file_hash: u128, // change this
+) -> u128 {
+    match file_unmapped_path {
+        Some(file_path) => {
+            let mut hasher = DefaultHasher::new();
+            file_path.hash(&mut hasher);
+            hasher.finish().into()
+        },
+        None => src_file_hash,
+    }
 }

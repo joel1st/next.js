@@ -136,6 +136,7 @@ pub fn custom_before_pass<'a, C: Comments + 'a>(
         match &opts.styled_components {
             Some(config) => Either::Left(styled_components::styled_components(
                 file.name.clone(),
+                file.unmapped_path.clone(),
                 file.src_hash,
                 config.clone(),
             )),

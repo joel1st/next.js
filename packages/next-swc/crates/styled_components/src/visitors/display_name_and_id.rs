@@ -16,13 +16,13 @@ use tracing::{debug, span, trace, Level};
 
 pub fn display_name_and_id(
     file_name: FileName,
-    src_file_hash: u128,
+    display_hash: u128,
     config: Rc<Config>,
     state: Rc<RefCell<State>>,
 ) -> impl Fold + VisitMut {
     as_folder(DisplayNameAndId {
         file_name,
-        src_file_hash,
+        display_hash,
 
         config,
         state,
@@ -37,7 +37,7 @@ static DISPLAY_NAME_REGEX: Lazy<Regex> =
 #[derive(Debug)]
 struct DisplayNameAndId {
     file_name: FileName,
-    src_file_hash: u128,
+    display_hash: u128,
 
     config: Rc<Config>,
     state: Rc<RefCell<State>>,
@@ -101,7 +101,7 @@ impl DisplayNameAndId {
         let next_id = self.next_id();
 
         let hash = {
-            let base = self.src_file_hash;
+            let base = self.display_hash;
             let base = base.to_be_bytes();
             let a = u32::from_be_bytes(base[0..4].try_into().unwrap());
             let b = u32::from_be_bytes(base[4..8].try_into().unwrap());
